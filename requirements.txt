@@ -1,0 +1,5 @@
+click
+requests
+pybel_tools
+pybel
+artifactory
