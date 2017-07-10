@@ -6,20 +6,20 @@ import logging
 import os
 
 import pandas as pd
-from artifactory import ArtifactoryPath
 from pybel.constants import IS_A
 from pybel.utils import ensure_quotes
 from pybel_tools.constants import PYBEL_RESOURCES_ENV
 from pybel_tools.definition_utils import write_namespace, get_date
 from pybel_tools.document_utils import write_boilerplate
 from pybel_tools.resources import HGNC_HUMAN_GENES, HGNC_GENE_FAMILIES, CONFIDENCE
+from pybel_tools.resources import deploy_namespace, deploy_knowledge
 
 from .constants import HGNC_GENE_FAMILY_URL
 
 log = logging.getLogger(__name__)
 
-MEMBERSHIP_FILE = 'hgnc-gene-family-membership.bel'
-arty_fmt = 'https://arty.scai.fraunhofer.de/artifactory/bel/namespace/{}'
+HGNC_GENE_FAMILIES_NAMESPACE_MODULE_NAME = 'hgnc-gene-families'
+HGNC_GENE_FAMILIES_MEMBERSHIP_MODULE_NAME = 'hgnc-gene-family-membership'
 
 
 def get_data():
@@ -113,11 +113,11 @@ def add_to_pybel_resources():
 
     df = get_data()
 
-    namespace_path = os.path.join(os.environ[PYBEL_RESOURCES_ENV], 'namespace', 'hgnc-gene-families.belns')
+    namespace_path = os.path.join(os.environ[PYBEL_RESOURCES_ENV], 'namespace', HGNC_GENE_FAMILIES_NAMESPACE_MODULE_NAME + '.belns')
     with open(namespace_path, 'w') as file:
         write_belns(file, df=df)
 
-    membership_path = os.path.join(os.environ[PYBEL_RESOURCES_ENV], 'knowledge', MEMBERSHIP_FILE)
+    membership_path = os.path.join(os.environ[PYBEL_RESOURCES_ENV], 'knowledge', HGNC_GENE_FAMILIES_MEMBERSHIP_MODULE_NAME + '.bel')
     with open(membership_path, 'w') as file:
         write_hgnc_gene_families(file, df=df)
 
@@ -126,24 +126,20 @@ def deploy_to_arty():
     """Gets the data and writes BEL namespace file to artifactory"""
     df = get_data()
 
-    ### Deploy Namespace
+    # Deploy Namespace
 
-    arty_name = 'hgnc-gene-families'
-    date = get_date()
-    arty_qname = '{}-{}.belns'.format(arty_name, date)
+    arty_qname = '{}-{}.belns'.format(HGNC_GENE_FAMILIES_NAMESPACE_MODULE_NAME, get_date())
 
     with open(arty_qname, 'w') as file:
         write_belns(file, df=df)
 
-    log.info('Deploying to arty')
-    path = ArtifactoryPath(arty_fmt.format(arty_name), auth=(os.environ['ARTY_USERNAME'], os.environ['ARTY_PASSWORD']))
-    log.info('Connected to arty %s', path)
-    path.mkdir(exist_ok=True)
-    log.info('Made directory')
-    path.deploy_file(arty_qname)
-    log.info('Upload complete')
+    deploy_namespace(arty_qname, HGNC_GENE_FAMILIES_NAMESPACE_MODULE_NAME)
 
-    ### Deploy Membership Knowledge
+    # Deploy Membership Knowledge
 
-    with open(os.path.join(os.environ[PYBEL_RESOURCES_ENV], 'knowledge', MEMBERSHIP_FILE), 'w') as file:
+    arty_qname = '{}-{}.bel'.format(HGNC_GENE_FAMILIES_MEMBERSHIP_MODULE_NAME, get_date())
+
+    with open(arty_qname, 'w') as file:
         write_hgnc_gene_families(file, df=df)
+
+    deploy_knowledge(arty_qname, HGNC_GENE_FAMILIES_MEMBERSHIP_MODULE_NAME)
