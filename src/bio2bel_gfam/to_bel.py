@@ -12,7 +12,7 @@ from pybel_tools.constants import PYBEL_RESOURCES_ENV
 from pybel_tools.definition_utils import write_namespace, get_date
 from pybel_tools.document_utils import write_boilerplate
 from pybel_tools.resources import HGNC_HUMAN_GENES, HGNC_GENE_FAMILIES, CONFIDENCE
-from pybel_tools.resources import deploy_namespace, deploy_knowledge
+from pybel_tools.resources import deploy_namespace, deploy_knowledge, get_today_arty_namespace
 
 from .constants import HGNC_GENE_FAMILY_URL
 
@@ -128,7 +128,7 @@ def deploy_to_arty():
 
     # Deploy Namespace
 
-    arty_qname = '{}-{}.belns'.format(HGNC_GENE_FAMILIES_NAMESPACE_MODULE_NAME, get_date())
+    arty_qname = get_today_arty_namespace(HGNC_GENE_FAMILIES_NAMESPACE_MODULE_NAME)
 
     with open(arty_qname, 'w') as file:
         write_belns(file, df=df)
